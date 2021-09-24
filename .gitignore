@@ -1,3 +1,4 @@
 .direnv
 credentials.yml
 .envrc
+__pycache__
