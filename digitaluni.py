@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import List, Dict
 import requests
 import sys
@@ -17,6 +17,7 @@ class UESequence:
     sequence_id: int
     name: str
     ue: UE
+    ue_url: str
 
     @property
     def shortname(self):
@@ -83,7 +84,10 @@ class DigitalUniView:
             for seq in json_sequence_list:
                 self.sequences.append(
                     UESequence(
-                        sequence_id=seq["sequence_id"], name=seq["sequence_nom"], ue=ue
+                        sequence_id=seq["sequence_id"],
+                        name=seq["sequence_nom"],
+                        ue=ue,
+                        ue_url=f"https://campus.sfc.unistra.fr/progressionpedago/cours/idSemI/{ue.seminaire_id}/seqId/{seq['sequence_id']}/#/cours",
                     )
                 )
 
@@ -97,6 +101,7 @@ class DigitalUniView:
 
             for act in activities:
                 if act["activite_est_validation"] == "1":
+                    act["_aggregatorinfo_sequence"] = asdict(seq)
                     self.homework.append(act)
 
     def filter_homework_information(self, wanted_info: List[str]) -> None:
