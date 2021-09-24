@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from typing import List, Dict
+from dataclasses import dataclass
 import requests
 import sys
 import yaml
@@ -7,7 +8,7 @@ import json
 
 WANTED_INFO = [
     "activite_nom",
-    #  "activite_description",
+    "activite_description",
     "activite_date_debut",
     "activite_heure_debut",
     "activite_date_fin",
@@ -16,78 +17,112 @@ WANTED_INFO = [
 ]
 
 
-# list of "seminaire_i_id" for each UE
-UE_LIST = [
-    {"id": 12865, "name": "UE 31 - Activité, cognition"},
-    {
-        "id": 12866,
-        "name": "UE 32 - Technologies Numériques et Apprentissage tout au long de la vie",
-    },
-    {
-        "id": 12867,
-        "name": "UE 33 - Développement Informatique, Réseaux et Systèmes Complexes",
-    },
-    {"id": 12868, "name": "UE 34 - Conception des applications numériques immersives"},
-]
+@dataclass
+class UE:
+    seminaire_id: int
+    name: str
 
 
-def get_sequence_ids(session: requests.Session, seminaire_id: int) -> List[int]:
-    """Get the sequence ids of every course in the UE represented by seminaire_id"""
+@dataclass
+class UESequence:
+    sequence_id: int
+    name: str
+    ue: UE
 
-    sequences = session.get(
-        f"https://campus.sfc.unistra.fr/rest/sequences/idSemI/{seminaire_id}"
-    ).json()
-
-    return [seq["sequence_id"] for seq in sequences]
-
-
-def get_homework_list(
-    session: requests.Session, seminaire_id: int, sequence_id: int
-) -> List[Dict]:
-    """Get the list of homework for the course represented by sequence_id"""
-
-    activities = session.get(
-        f"https://campus.sfc.unistra.fr/rest/activities/idSeq/{sequence_id}/utilId/13530/idSemI/{seminaire_id}"
-    ).json()
-
-    return filter_homework(activities)
+    @property
+    def shortname(self):
+        return self.name.split()[0]
 
 
-def get_credentials():
-    with open("credentials.yml") as f:
-        try:
-            credentials = yaml.safe_load(f)
-        except yaml.YAMLError:
-            print(
-                "Le fichier credentials.yml n'est pas valide, l'erreur complète est :",
-                file=sys.stderr,
+class DigitalUniView:
+    ue_list: List[UE]
+    sequences: List[UESequence]
+    session: requests.Session
+    homework: List[Dict]
+
+    def __init__(self) -> None:
+        self.session = requests.Session()
+
+    def __enter__(self) -> None:
+        # No idea if storing the result of __enter__() is really needed
+        self._session_ctx_mngr = self.session.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb) -> None:
+        self.session.__exit__(exc_type, exc_value, tb)
+
+    def connect(self, cred_path: str) -> List[Dict]:
+        with open(cred_path) as f:
+            try:
+                credentials = yaml.safe_load(f)
+            except yaml.YAMLError:
+                print(
+                    f"Le fichier {cred_path} n'est pas valide, l'erreur complète est :",
+                    file=sys.stderr,
+                )
+                raise
+
+        self.session.post("https://campus.sfc.unistra.fr/login", data=credentials)
+
+    def _discover_ues(self) -> None:
+        """Build self.ue_list by looking at available UEs on the landing page"""
+        landing_page = BeautifulSoup(
+            self.session.get("https://campus.sfc.unistra.fr/").text, "html.parser"
+        )
+        html_list = landing_page.find(
+            "ul", id="color-menuJ", class_="dl-submenu"
+        ).find_all("a")
+
+        self.ue_list = []
+        for ue in html_list:
+            # skip "Informations générales, not a real UE
+            if ue.text.startswith("Informations"):
+                continue
+
+            self.ue_list.append(
+                UE(seminaire_id=int(ue["href"].split("/")[-1]), name=ue.text)
             )
-            raise
 
-    return credentials
+    def _discover_sequences(self) -> None:
+        self._discover_ues()
+        for ue in self.ue_list:
+            json_sequence_list = self.session.get(
+                f"https://campus.sfc.unistra.fr/rest/sequences/idSemI/{ue.seminaire_id}"
+            ).json()
 
+            self.sequences = []
+            for seq in json_sequence_list:
+                self.sequences.append(
+                    UESequence(
+                        sequence_id=seq["sequence_id"], name=seq["sequence_nom"], ue=ue
+                    )
+                )
 
-def filter_homework_information(activity: Dict):
-    return {k: v for k, v in activity.items() if k in WANTED_INFO}
+    def discover_homework(self) -> List[Dict]:
+        self._discover_sequences()
+        self.homework = []
+        for seq in self.sequences:
+            activities = self.session.get(
+                f"https://campus.sfc.unistra.fr/rest/activities/idSeq/{seq.sequence_id}/utilId/13530/idSemI/{seq.ue.seminaire_id}"
+            ).json()
 
+            for act in activities:
+                if act["activite_est_validation"] == "1":
+                    self.homework.append(act)
 
-def filter_homework(activities: List[Dict]):
-    return [
-        filter_homework_information(act)
-        for act in activities
-        if act["activite_est_validation"] == "1"
-    ]
+    def filter_homework_information(self, wanted_info: List[str]) -> None:
+        for i, hm in enumerate(self.homework):
+            self.homework[i] = {k: v for k, v in hm.items() if k in wanted_info}
 
 
 if __name__ == "__main__":
-    credentials = get_credentials()
+    with DigitalUniView() as view:
+        view.connect("credentials.yml")
+        view.discover_homework()
 
-    with requests.Session() as session:
-        session.post("https://campus.sfc.unistra.fr/login", data=credentials)
-
-        all_homework = []
-        for ue in UE_LIST:
-            for sequence in get_sequence_ids(session, ue["id"]):
-                all_homework.extend(get_homework_list(session, ue["id"], sequence))
-
-        print(json.dumps(all_homework, sort_keys=True, indent=4))
+        print("---------")
+        print(view.ue_list)
+        print("---------")
+        print(view.sequences)
+        print("---------")
+        print(json.dumps(view.homework, indent=4))
