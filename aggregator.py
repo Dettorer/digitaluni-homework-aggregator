@@ -27,6 +27,7 @@ def text_output(homework_list: List[Dict]) -> None:
         )
 
         # TODO: color
+        # TODO: more human readable date formatting
         print(f"- avant le {end_date} pour {sequence_name}")
         print(f"\tLien vers l'{sequence_name[:4]} : {ue_url}")
         print(f"\t{name}")
@@ -34,13 +35,18 @@ def text_output(homework_list: List[Dict]) -> None:
         print()
 
 
+# TODO: HTML output. Also remind the users, at the start of the page, that dates
+# given by digitaluni can be misleading, and that teachers may actually want the
+# work to be handed in sooner
+
+
 if __name__ == "__main__":
+    with DigitalUniView() as view:
+        view.connect("credentials.yml")
+        view.discover_homework()
+        raw = view.homework
+        text_output(raw)
     # TODO: don't forget to remove the dump
-    #  with DigitalUniView() as view:
-        #  view.connect("credentials.yml")
-        #  view.discover_homework()
-        #  raw = view.homework
-        #  print(json.dumps(raw, indent=4))
-    with open("dump.json") as f:
-        raw = json.load(f)
-    text_output(raw)
+    #  with open("dump.json") as f:
+        #  raw = json.load(f)
+    #  text_output(raw)
