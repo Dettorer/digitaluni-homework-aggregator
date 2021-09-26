@@ -75,12 +75,12 @@ class DigitalUniView:
 
     def _discover_sequences(self) -> None:
         self._discover_ues()
+        self.sequences = []
         for ue in self.ue_list:
             json_sequence_list = self.session.get(
                 f"https://campus.sfc.unistra.fr/rest/sequences/idSemI/{ue.seminaire_id}"
             ).json()
 
-            self.sequences = []
             for seq in json_sequence_list:
                 self.sequences.append(
                     UESequence(
