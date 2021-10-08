@@ -26,18 +26,11 @@ def text_output(homework_list: List[Dict]) -> None:
             width=130,
         )
 
-        # TODO: color
-        # TODO: more human readable date formatting
         print(f"- avant le {end_date} pour {sequence_name}")
         print(f"\tLien vers l'{sequence_name[:4]} : {ue_url}")
         print(f"\t{name}")
         print(f"\t{description}")
         print()
-
-
-# TODO: HTML output. Also remind the users, at the start of the page, that dates
-# given by digitaluni can be misleading, and that teachers may actually want the
-# work to be handed in sooner
 
 
 if __name__ == "__main__":

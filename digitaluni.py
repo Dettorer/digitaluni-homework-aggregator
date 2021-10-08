@@ -100,8 +100,6 @@ class DigitalUniView:
             ).json()
 
             for act in activities:
-                # TODO: also filter out activities that aren't open anymore or
-                # aren't open *yet*
                 if act["activite_est_validation"] == "1":
                     act["_aggregatorinfo_sequence"] = asdict(seq)
                     self.homework.append(act)
