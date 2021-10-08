@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from datetime import datetime
 from html2text import HTML2Text
 from textwrap import shorten

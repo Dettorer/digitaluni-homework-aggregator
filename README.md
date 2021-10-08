@@ -18,14 +18,14 @@ following the format of `credentials_example.yml`.
 
 ```shell
 pip install -r requirements.txt
-python aggregator.py
+./aggregator.py
 ```
 
 ### Using nix
 
 ```shell
 nix-shell
-python aggregator.py
+./aggregator.py
 ```
 
 ### Using nix with direnv
@@ -33,5 +33,5 @@ python aggregator.py
 ```shell
 echo "use_nix" > .direnvrc
 direnv allow
-python aggregator.py
+./aggregator.py
 ```
