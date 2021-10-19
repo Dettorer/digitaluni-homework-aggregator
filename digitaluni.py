@@ -103,7 +103,3 @@ class DigitalUniView:
                 if act["activite_est_validation"] == "1":
                     act["_aggregatorinfo_sequence"] = asdict(seq)
                     self.homework.append(act)
-
-    def filter_homework_information(self, wanted_info: List[str]) -> None:
-        for i, hm in enumerate(self.homework):
-            self.homework[i] = {k: v for k, v in hm.items() if k in wanted_info}
