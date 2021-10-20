@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>DigitalUni aggregator</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <h1>Travail à faire d'après DigitalUni (mis à jour le {{ now|format_datetime('dd/MM à HH:mm', locale="fr") }})</h1>
+    <p>Les travaux sont classés par ordre de date de cloture telle qu'indiquée sur digitaluni.</p>
+    <p>&#9888; Attention, les vraies dates de rendu peuvent être différentes de celle indiquée sur cette page. Quelques profs ferment l'activité <em>après</em> la date de rendu demandée afin de permettre les rendus tardifs.</p>
+
+    <ul id="navigation">
+    {% for hm in homework_list %}
+        <li>
+            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#desc-{{ loop.index }}">Voir la description</button>
+            Pour le {{ hm|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
+            (dans <a href="{{ hm["_aggregatorinfo_sequence"]["ue_url"] }}">{{ hm["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ hm["activite_nom"] }}
+            <div id="desc-{{ loop.index }}" class="collapse">
+                {{ hm["activite_description"] }}
+            </div>
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

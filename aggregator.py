@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-from babel.dates import format_date
+from babel.dates import format_date, format_datetime
 from datetime import datetime, date
 from html2text import HTML2Text
 from textwrap import shorten
 from typing import Dict, List
+import sys
+import jinja2
 import json
 
 from digitaluni import DigitalUniView
@@ -37,13 +39,34 @@ def text_output(homework_list: List[Dict]) -> None:
         print()
 
 
+def html_output(homework_list: List[Dict], out_file: str) -> None:
+    homework_list.sort(key=parse_end_date)
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("templates"),
+    )
+    env.filters.update({
+        "format_datetime": format_datetime,
+        "format_date": format_date,
+        "parse_end_date": parse_end_date,
+    })
+
+    template = env.get_template("html_output.jinja2")
+    template_values = {
+        "now": datetime.now(),
+    }
+
+    with open(out_file, "w") as f:
+        f.write(template.render(homework_list=homework_list, **template_values))
+
+
 if __name__ == "__main__":
-    with DigitalUniView() as view:
-        view.connect("credentials.yml")
-        view.discover_homework()
-        raw = view.homework
-        text_output(raw)
-    #  with open("dump.json") as f:
-        #  raw = json.load(f)
-    #  text_output(raw)
+    #  with DigitalUniView() as view:
+        #  view.connect("credentials.yml")
+        #  view.discover_homework()
+        #  raw = view.homework
+        #  text_output(raw)
+    with open("dump.json") as f:
+        raw = json.load(f)
+    html_output(raw, sys.argv[1])
     # TODO: don't forget to remove the dump
