@@ -42,6 +42,7 @@ class DigitalUniView:
         self.session.__exit__(exc_type, exc_value, tb)
 
     def connect(self, cred_path: str) -> List[Dict]:
+        """Log into digitaluni using credentials from the `cred_path` file"""
         with open(cred_path) as f:
             try:
                 credentials = yaml.safe_load(f)
@@ -55,7 +56,11 @@ class DigitalUniView:
         self.session.post("https://campus.sfc.unistra.fr/login", data=credentials)
 
     def _discover_ues(self) -> None:
-        """Build self.ue_list by looking at available UEs on the landing page"""
+        """Build self.ue_list by looking at available UEs on the landing page
+
+        This function should not be called directly, it is used by
+        `_discover_sequences`
+        """
         landing_page = BeautifulSoup(
             self.session.get("https://campus.sfc.unistra.fr/").text, "html.parser"
         )
@@ -74,6 +79,11 @@ class DigitalUniView:
             )
 
     def _discover_sequences(self) -> None:
+        """Build the self.sequences list by looking at available sequences in each UE
+
+        This function should not be called directly, it is used by
+        `discover_homework`
+        """
         self._discover_ues()
         self.sequences = []
         for ue in self.ue_list:
@@ -92,6 +102,7 @@ class DigitalUniView:
                 )
 
     def discover_homework(self) -> List[Dict]:
+        """Build the self.homework list by looking at available activities in each sequence"""
         self._discover_sequences()
         self.homework = []
         for seq in self.sequences:
@@ -100,6 +111,10 @@ class DigitalUniView:
             ).json()
 
             for act in activities:
+                # Homework activities are marked with "activite_est_validation" on digitaluni
                 if act["activite_est_validation"] == "1":
+                    # Add a reference to the parent sequence in the activity
+                    # information, this allows displayers to link each activity
+                    # to the sequence or UE information
                     act["_aggregatorinfo_sequence"] = asdict(seq)
                     self.homework.append(act)

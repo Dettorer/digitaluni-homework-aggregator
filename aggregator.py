@@ -13,11 +13,14 @@ from digitaluni import DigitalUniView
 
 
 def parse_end_date(homework: Dict) -> date:
+    """Get the end date of an activity and build a `datetime.date` from it"""
     FMT = "%Y-%m-%d"
     return datetime.strptime(homework["activite_date_fin"], FMT).date()
 
 
 def text_output(homework_list: List[Dict]) -> None:
+    """Write a human readable raw text representation of the homework list on
+    the standard output"""
     html_renderer = HTML2Text()
     homework_list.sort(key=parse_end_date)
 
@@ -40,8 +43,11 @@ def text_output(homework_list: List[Dict]) -> None:
 
 
 def html_output(homework_list: List[Dict], out_file: str) -> None:
+    """Write a human readable html representation of the homework list to
+    `out_file`"""
     homework_list.sort(key=parse_end_date)
 
+    # Jinja environment setup
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader("templates"),
     )
@@ -51,22 +57,19 @@ def html_output(homework_list: List[Dict], out_file: str) -> None:
         "parse_end_date": parse_end_date,
     })
 
+    # Template setup
     template = env.get_template("html_output.jinja2")
     template_values = {
         "now": datetime.now(),
     }
 
+    # Rendering
     with open(out_file, "w") as f:
         f.write(template.render(homework_list=homework_list, **template_values))
 
 
 if __name__ == "__main__":
-    #  with DigitalUniView() as view:
-        #  view.connect("credentials.yml")
-        #  view.discover_homework()
-        #  raw = view.homework
-        #  text_output(raw)
-    with open("dump.json") as f:
-        raw = json.load(f)
-    html_output(raw, sys.argv[1])
-    # TODO: don't forget to remove the dump
+    with DigitalUniView() as view:
+        view.connect("credentials.yml")
+        view.discover_homework()
+        html_output(view.homework, sys.argv[1])
