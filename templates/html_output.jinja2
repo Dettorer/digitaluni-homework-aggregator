@@ -17,7 +17,7 @@
         <li>
             <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#desc-{{ loop.index }}">Voir la description</button>
             Pour le {{ hm|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
-            (dans <a href="{{ hm["_aggregatorinfo_sequence"]["ue_url"] }}">{{ hm["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ hm["activite_nom"] }}
+            (dans <a href="{{ hm["_aggregatorinfo_sequence"]["ue_url"] }}" target="_blank">{{ hm["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ hm["activite_nom"] }}
             <div id="desc-{{ loop.index }}" class="collapse">
                 {{ hm["activite_description"] }}
             </div>
