@@ -62,13 +62,15 @@ def html_output(homework_list: List[Dict], out_file: str) -> None:
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader("templates"),
     )
-    env.filters.update({
-        "format_datetime": format_datetime,
-        "format_date": format_date,
-        "parse_end_date": parse_end_date,
-        "is_past_homework": is_past_homework,
-        "is_open_homework": is_open_homework,
-    })
+    env.filters.update(
+        {
+            "format_datetime": format_datetime,
+            "format_date": format_date,
+            "parse_end_date": parse_end_date,
+            "is_past_homework": is_past_homework,
+            "is_open_homework": is_open_homework,
+        }
+    )
 
     # Template setup
     template = env.get_template("html_output.jinja2")
@@ -91,5 +93,5 @@ if __name__ == "__main__":
             view.connect("credentials.yml")
             view.discover_homework()
             html_output(view.homework, sys.argv[1])
-            with open("dump.json", 'w') as f:
+            with open("dump.json", "w") as f:
                 json.dump(view.homework, f, indent=4)
