@@ -12,6 +12,17 @@ import json
 from digitaluni import DigitalUniView
 
 
+def is_past_homework(homework: Dict) -> bool:
+    return parse_end_date(homework) < date.today()
+
+
+def is_open_homework(homework: Dict) -> bool:
+    FMT = "%Y-%m-%d %H:%M:%S"
+    access_begin = datetime.strptime(homework["activite_date_debut_acces"], FMT)
+    access_end = datetime.strptime(homework["activite_date_fin_acces"], FMT)
+    return access_begin <= datetime.now() <= access_end
+
+
 def parse_end_date(homework: Dict) -> date:
     """Get the end date of an activity and build a `datetime.date` from it"""
     FMT = "%Y-%m-%d"
@@ -55,6 +66,8 @@ def html_output(homework_list: List[Dict], out_file: str) -> None:
         "format_datetime": format_datetime,
         "format_date": format_date,
         "parse_end_date": parse_end_date,
+        "is_past_homework": is_past_homework,
+        "is_open_homework": is_open_homework,
     })
 
     # Template setup
@@ -69,7 +82,14 @@ def html_output(homework_list: List[Dict], out_file: str) -> None:
 
 
 if __name__ == "__main__":
+    USE_DUMP = False
     with DigitalUniView() as view:
-        view.connect("credentials.yml")
-        view.discover_homework()
-        html_output(view.homework, sys.argv[1])
+        if USE_DUMP:
+            with open("dump.json") as f:
+                html_output(json.load(f), sys.argv[1])
+        else:
+            view.connect("credentials.yml")
+            view.discover_homework()
+            html_output(view.homework, sys.argv[1])
+            with open("dump.json", 'w') as f:
+                json.dump(view.homework, f, indent=4)

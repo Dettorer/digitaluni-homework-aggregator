@@ -1,3 +1,14 @@
+{% macro activity_item_list(homework, index) -%}
+    <li>
+        <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#desc-{{ index }}">Voir la description</button>
+        Pour le {{ homework|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
+        (dans <a href="{{ homework["_aggregatorinfo_sequence"]["ue_url"] }}" target="_blank">{{ homework["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ homework["activite_nom"] }}
+        <div id="desc-{{ index }}" class="collapse">
+            {{ homework["activite_description"] }}
+        </div>
+    </li>
+{%- endmacro %}
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -12,16 +23,33 @@
     <p>Les travaux sont classés par ordre de date de cloture telle qu'indiquée sur digitaluni.</p>
     <p>&#9888; Attention, les vraies dates de rendu peuvent être différentes de celle indiquée sur cette page. Quelques profs ferment l'activité <em>après</em> la date de rendu demandée afin de permettre les rendus tardifs.</p>
 
-    <ul id="navigation">
+    <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#past-activities">Voir les activités passées</button>
+    <div id="past-activities" class="collapse">
+        <h2>Activités passées</h2>
+        <ul>
+        {% for hm in homework_list %}
+            {% if hm|is_past_homework %}
+                {{ activity_item_list(hm, loop.index) }}
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+
+    <h2>
+        Activités en cours et futures
+        <button type="button" class="btn btn-info" data-toggle="collapse" data-target=".closed_activity">Voir les activités fermées</button>
+    </h2>
+    <ul id="current-activities">
     {% for hm in homework_list %}
-        <li>
-            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#desc-{{ loop.index }}">Voir la description</button>
-            Pour le {{ hm|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
-            (dans <a href="{{ hm["_aggregatorinfo_sequence"]["ue_url"] }}" target="_blank">{{ hm["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ hm["activite_nom"] }}
-            <div id="desc-{{ loop.index }}" class="collapse">
-                {{ hm["activite_description"] }}
-            </div>
-        </li>
+        {% if not hm|is_past_homework %}
+            {% if hm|is_open_homework %}
+                {{ activity_item_list(hm, loop.index) }}
+            {% else %}
+                <div class="collapse closed_activity" style="color:gray;">
+                    {{ activity_item_list(hm, loop.index) }}
+                </div>
+            {% endif %}
+        {% endif %}
     {% endfor %}
     </ul>
 </body>
