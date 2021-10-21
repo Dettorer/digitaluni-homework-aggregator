@@ -1,7 +1,7 @@
 {% macro activity_item_list(homework, index) -%}
     <li>
         <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#desc-{{ index }}">Voir la description</button>
-        Pour le {{ homework|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
+        Jusqu'au {{ homework|parse_end_date|format_datetime('EEEE d MMMM yyyy') }}
         (dans <a href="{{ homework["_aggregatorinfo_sequence"]["ue_url"] }}" target="_blank">{{ homework["_aggregatorinfo_sequence"]["name"] }}</a>) : {{ homework["activite_nom"] }}
         <div id="desc-{{ index }}" class="collapse">
             {{ homework["activite_description"] }}
