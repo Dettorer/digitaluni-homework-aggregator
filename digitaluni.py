@@ -65,18 +65,22 @@ class DigitalUniView:
         landing_page = BeautifulSoup(
             self.session.get("https://campus.sfc.unistra.fr/").text, "html.parser"
         )
-        html_list = landing_page.find(
-            "ul", id="color-menuJ", class_="dl-submenu"
-        ).find_all("a")
+        html_list = landing_page.select_one("ul#color-menuJ.dl-submenu")
+        if not html_list:
+            raise RuntimeError(
+                "Impossible de trouver la liste des UE sur digitaluni "
+                "(peut être que l'ID ou la classe de l'élément HTML a changé)"
+            )
+        html_ue_links = html_list.find_all("a")
 
         self.ue_list = []
-        for ue in html_list:
+        for ue_link in html_ue_links:
             # skip "Informations générales, not a real UE
-            if ue.text.startswith("Informations"):
+            if ue_link.text.startswith("Informations"):
                 continue
 
             self.ue_list.append(
-                UE(seminaire_id=int(ue["href"].split("/")[-1]), name=ue.text)
+                UE(seminaire_id=int(ue_link["href"].split("/")[-1]), name=ue_link.text)
             )
 
     def _discover_sequences(self) -> None:
