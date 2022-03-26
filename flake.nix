@@ -15,13 +15,26 @@
     pkgs = import nixpkgs { inherit system; };
     mach-nix = import mach-nix-src { inherit pkgs; };
 
-    # Define a devShell that contains all the Python packages listed in
-    # requirements.txt
-    pythonShell = mach-nix.mkPythonShell {
-      requirements = builtins.readFile ./requirements.txt;
-    };
+    version = "1.1";
+    requirements = builtins.readFile ./requirements.txt;
   in
   {
-    devShells.${system}.default = pythonShell;
+    packages.${system}.default = mach-nix.buildPythonPackage rec {
+      pname = "digitaluni-homework-aggregator";
+      src = ./.;
+
+      phases = [ "unpackPhase" "installPhase" ];
+      installPhase = ''
+        mkdir -p $out/bin
+        cp -r digitaluni.py templates $out/bin/
+        cp aggregator.py $out/bin/${pname}
+      '';
+
+      inherit requirements version;
+    };
+
+    devShells.${system}.default = mach-nix.mkPythonShell {
+      inherit requirements;
+    };
   };
 }
