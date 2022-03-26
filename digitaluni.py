@@ -1,3 +1,4 @@
+from __future__ import annotations
 from bs4 import BeautifulSoup
 from dataclasses import dataclass, asdict
 from typing import List, Dict
@@ -33,7 +34,7 @@ class DigitalUniView:
     def __init__(self) -> None:
         self.session = requests.Session()
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> DigitalUniView:
         # No idea if storing the result of __enter__() is really needed
         self._session_ctx_mngr = self.session.__enter__()
         return self
@@ -41,7 +42,7 @@ class DigitalUniView:
     def __exit__(self, exc_type, exc_value, tb) -> None:
         self.session.__exit__(exc_type, exc_value, tb)
 
-    def connect(self, cred_path: str) -> List[Dict]:
+    def connect(self, cred_path: str) -> None:
         """Log into digitaluni using credentials from the `cred_path` file"""
         with open(cred_path) as f:
             try:
@@ -101,7 +102,7 @@ class DigitalUniView:
                     )
                 )
 
-    def discover_homework(self) -> List[Dict]:
+    def discover_homework(self) -> None:
         """Build the self.homework list by looking at available activities in each sequence"""
         self._discover_sequences()
         self.homework = []
